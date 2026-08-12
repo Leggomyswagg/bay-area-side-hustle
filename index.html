@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#080808" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Bay Area Side Hustle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            accent: '#FF6A00',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: #080808;
+      color: #F2F0E8;
+      min-height: 100%;
+      /* iOS notch / Android system bars */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+    .condensed { font-weight: 800; letter-spacing: -0.03em; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    ::selection { background: #FF6A00; color: white; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #121212; }
+    ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 3px; }
+    .skyline-stroke { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; }
+    .skyline-fill { fill: currentColor; opacity: 0.14; }
+    /* Cover: strong orange — max impact on dark cover card */
+    .cover-skyline { color: #FF6A00; }
+    .cover-skyline .skyline-fill { opacity: 0.2; }
+    /* Section dividers: warm mid-tone, readable on #080808 */
+    .section-skyline { color: #6B6358; }
+    .section-skyline .skyline-stroke { stroke-width: 1.5; opacity: 0.95; }
+    .section-skyline .skyline-fill { opacity: 0.14; }
+    /* Hero watermark: soft cream so it registers without competing with type */
+    .hero-skyline { color: #D4CFC4; }
+    .hero-skyline .skyline-fill { opacity: 0.09; }
+    .hero-skyline .skyline-stroke { opacity: 0.5; }
+    /* Chapter card watermarks */
+    .chapter-skyline { color: #9A9488; }
+    .chapter-skyline .skyline-fill { opacity: 0.14; }
+    .chapter-skyline .skyline-stroke { opacity: 0.55; }
+    /* Footer: warmer elevated gray — clear silhouette on black */
+    .footer-skyline { color: #4A443C; }
+    .footer-skyline .skyline-fill { opacity: 0.4; }
+    .footer-skyline .skyline-stroke { opacity: 0.9; stroke-width: 1.5; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.0/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // ========== OAKLAND DOWNTOWN SKYLINE (original outline illustration) ==========
+    // L→R landmarks:
+    // Paramount Theatre · Cathedral Building (flatiron) · City Hall (dome)
+    // Clorox · Ordway · Tribune Tower (gothic + spire) · 1111 Broadway
+    // Federal Building (twins) · Kaiser Center · Lake Merritt Plaza · edge mid-rises
+    function OaklandSkyline({ className = "", style = {}, showFill = true, height = 80 }) {
+      const fillPath = `
+        M0 120 L0 100
+        L8 100 L8 82 L16 82 L16 58 L20 58 L20 42 L24 42 L24 58 L28 58 L28 82 L38 82 L38 70 L48 70 L48 88
+        L55 88 L55 50 L62 50 L68 38 L78 38 L85 50 L92 50 L92 78
+        L100 78 L100 55 L108 55 L108 40 L116 40 L116 28 L122 28 L122 18 L128 18 L128 12 L134 12 L134 18
+        L140 18 L140 28 L148 28 L148 40 L156 40 L156 55 L165 55 L165 85
+        L172 85 L172 60 L180 60 L180 48 L190 48 L190 60 L198 60 L198 80
+        L205 80 L205 52 L214 52 L214 36 L226 36 L226 24 L238 24 L238 36 L250 36 L250 52 L260 52 L260 78
+        L268 78 L268 42 L278 42 L278 22 L288 22 L288 12 L296 12 L296 6 L304 6 L304 12 L312 12 L312 22
+        L322 22 L322 42 L334 42 L334 75
+        L342 75 L342 38 L352 38 L352 20 L362 20 L362 12 L370 12 L370 6 L378 6 L378 2 L386 2 L386 6
+        L394 6 L394 12 L402 12 L402 20 L412 20 L412 38 L424 38 L424 72
+        L432 72 L432 40 L442 40 L442 26 L454 26 L454 14 L466 14 L466 26 L478 26 L478 40 L490 40 L490 68
+        L498 68 L498 32 L508 32 L508 16 L518 16 L518 8 L526 8 L526 4 L534 4 L534 8 L542 8 L542 16
+        L552 16 L552 32 L562 32 L562 70
+        L570 70 L570 38 L580 38 L580 24 L592 24 L592 38 L602 38 L602 62
+        L610 62 L610 35 L620 35 L620 18 L630 18 L630 10 L640 10 L640 18 L650 18 L650 35 L662 35 L662 58
+        L670 58 L670 32 L680 32 L680 18 L690 18 L690 10 L700 10 L700 18 L710 18 L710 32 L722 32 L722 78
+        L730 78 L730 48 L740 48 L740 34 L752 34 L752 48 L762 48 L762 68
+        L770 68 L770 50 L780 50 L780 62 L788 62 L788 80 L796 80 L796 100
+        L800 100 L800 120 Z
+      `;
+
+      return (
+        <svg
+          viewBox="0 0 800 120"
+          preserveAspectRatio="xMidYMax meet"
+          className={className}
+          style={{ width: "100%", height, display: "block", ...style }}
+          aria-label="Downtown Oakland skyline — City Hall, Tribune Tower, Cathedral Building, Ordway, Federal Building, Kaiser Center"
+        >
+          {showFill && <path className="skyline-fill" d={fillPath} />}
+          <line className="skyline-stroke" x1="0" y1="100" x2="800" y2="100" />
+
+          {/* --- Paramount Theatre (Art Deco vertical blade / marquee tower) --- */}
+          <path className="skyline-stroke" d="M8 100 L8 82 L16 82 L16 58 L20 58 L20 42 L24 42 L24 58 L28 58 L28 82 L38 82" />
+          <line className="skyline-stroke" x1="22" y1="42" x2="22" y2="36" strokeWidth="1.1" />
+
+          {/* --- Uptown / Broadway mid-rises --- */}
+          <path className="skyline-stroke" d="M38 82 L38 70 L48 70 L48 88 L55 88" />
+
+          {/* --- Cathedral Building (unique flatiron / triangular footprint silhouette) --- */}
+          <path className="skyline-stroke" d="M55 88 L55 50 L62 50 L68 38 L78 38 L85 50 L92 50 L92 78" />
+          <line className="skyline-stroke" x1="68" y1="42" x2="78" y2="42" opacity="0.5" strokeWidth="0.7" />
+
+          {/* --- OAKLAND CITY HALL (Beaux-Arts — central tower + dome / cupola) --- */}
+          <path className="skyline-stroke" d="M100 78 L100 55 L108 55 L108 40 L116 40 L116 28 L122 28 L122 18 L128 18 L128 12
+             M128 12 L134 12
+             M134 12 L134 18 L140 18 L140 28 L148 28 L148 40 L156 40 L156 55 L165 55 L165 85" />
+          {/* City Hall dome */}
+          <path className="skyline-stroke" d="M122 12 Q128 4 134 12" strokeWidth="1.3" />
+          <line className="skyline-stroke" x1="128" y1="4" x2="128" y2="1" strokeWidth="1" />
+          {/* City Hall colonnade hint */}
+          <g className="skyline-stroke" opacity="0.4" strokeWidth="0.7">
+            <line x1="112" y1="48" x2="112" y2="55" />
+            <line x1="120" y1="48" x2="120" y2="55" />
+            <line x1="128" y1="48" x2="128" y2="55" />
+            <line x1="136" y1="48" x2="136" y2="55" />
+            <line x1="144" y1="48" x2="144" y2="55" />
+          </g>
+
+          {/* --- Rotunda / historic mid-block --- */}
+          <path className="skyline-stroke" d="M172 85 L172 60 L180 60 L180 48 L190 48 L190 60 L198 60 L198 80" />
+
+          {/* --- Clorox Building (modern slab, setback crown) --- */}
+          <path className="skyline-stroke" d="M205 80 L205 52 L214 52 L214 36 L226 36 L226 24 L238 24 L238 36 L250 36 L250 52 L260 52 L260 78" />
+          <g className="skyline-stroke" opacity="0.35" strokeWidth="0.7">
+            <line x1="218" y1="40" x2="246" y2="40" />
+            <line x1="218" y1="48" x2="246" y2="48" />
+            <line x1="218" y1="56" x2="246" y2="56" />
+          </g>
+
+          {/* --- Ordway Building (tall flat-top modern — among Oakland's tallest) --- */}
+          <path className="skyline-stroke" d="M268 78 L268 42 L278 42 L278 22 L288 22 L288 12 L296 12 L296 6 L304 6 L304 12 L312 12 L312 22 L322 22 L322 42 L334 42 L334 75" />
+          <g className="skyline-stroke" opacity="0.4" strokeWidth="0.7">
+            <line x1="282" y1="28" x2="318" y2="28" />
+            <line x1="282" y1="36" x2="318" y2="36" />
+            <line x1="282" y1="44" x2="318" y2="44" />
+            <line x1="282" y1="52" x2="318" y2="52" />
+            <line x1="282" y1="60" x2="318" y2="60" />
+          </g>
+
+          {/* --- TRIBUNE TOWER (gothic revival — stepped crown + flagpole spire) --- */}
+          <path className="skyline-stroke" d="M342 75 L342 38 L352 38 L352 20 L362 20 L362 12 L370 12 L370 6 L378 6 L378 2
+             M378 2 L386 2
+             M386 2 L386 6 L394 6 L394 12 L402 12 L402 20 L412 20 L412 38 L424 38 L424 72" />
+          <line className="skyline-stroke" x1="382" y1="2" x2="382" y2="-2" strokeWidth="1.3" />
+          <path className="skyline-stroke" d="M366 12 L366 9 L398 9 L398 12" opacity="0.7" />
+          <path className="skyline-stroke" d="M370 6 L370 4 L394 4 L394 6" opacity="0.7" />
+          <g className="skyline-stroke" opacity="0.4" strokeWidth="0.7">
+            <line x1="350" y1="44" x2="416" y2="44" />
+            <line x1="350" y1="54" x2="416" y2="54" />
+            <line x1="350" y1="64" x2="416" y2="64" />
+            <line x1="368" y1="24" x2="400" y2="24" />
+          </g>
+
+          {/* --- 1111 Broadway / City Center --- */}
+          <path className="skyline-stroke" d="M432 72 L432 40 L442 40 L442 26 L454 26 L454 14 L466 14 L466 26 L478 26 L478 40 L490 40 L490 68" />
+          <g className="skyline-stroke" opacity="0.35" strokeWidth="0.7">
+            <line x1="446" y1="30" x2="474" y2="30" />
+            <line x1="446" y1="40" x2="474" y2="40" />
+            <line x1="446" y1="50" x2="474" y2="50" />
+          </g>
+
+          {/* --- FEDERAL BUILDING (Dellums — twin towers) --- */}
+          <path className="skyline-stroke" d="M498 68 L498 32 L508 32 L508 16 L518 16 L518 8 L526 8 L526 4
+             M526 4 L534 4
+             M534 4 L534 8 L542 8 L542 16 L552 16 L552 32 L562 32 L562 70" />
+          <path className="skyline-stroke" d="M570 70 L570 38 L580 38 L580 24 L592 24 L592 38 L602 38 L602 62" />
+          <g className="skyline-stroke" opacity="0.35" strokeWidth="0.7">
+            <line x1="512" y1="22" x2="548" y2="22" />
+            <line x1="512" y1="32" x2="548" y2="32" />
+            <line x1="512" y1="42" x2="548" y2="42" />
+            <line x1="582" y1="32" x2="590" y2="32" />
+            <line x1="582" y1="42" x2="590" y2="42" />
+          </g>
+
+          {/* --- Kaiser Center (broader podium + tower) --- */}
+          <path className="skyline-stroke" d="M610 62 L610 35 L620 35 L620 18 L630 18 L630 10 L640 10 L640 18 L650 18 L650 35 L662 35 L662 58" />
+          <path className="skyline-stroke" d="M670 58 L670 32 L680 32 L680 18 L690 18 L690 10 L700 10 L700 18 L710 18 L710 32 L722 32 L722 78" />
+          <g className="skyline-stroke" opacity="0.3" strokeWidth="0.7">
+            <line x1="624" y1="24" x2="646" y2="24" />
+            <line x1="624" y1="32" x2="646" y2="32" />
+            <line x1="684" y1="24" x2="706" y2="24" />
+            <line x1="684" y1="36" x2="706" y2="36" />
+          </g>
+
+          {/* --- Lake Merritt Plaza + eastern mid-rises --- */}
+          <path className="skyline-stroke" d="M730 78 L730 48 L740 48 L740 34 L752 34 L752 48 L762 48 L762 68" />
+          <path className="skyline-stroke" d="M770 68 L770 50 L780 50 L780 62 L788 62 L788 80 L796 80 L796 100" />
+        </svg>
+      );
+    }
+
+    // Compact skyline for section dividers / chapter headers
+    function SkylineDivider({ className = "" }) {
+      return (
+        <div className={`w-full overflow-hidden ${className}`} aria-hidden="true">
+          <OaklandSkyline className="section-skyline" height={52} showFill={true} />
+        </div>
+      );
+    }
+
+    // ========== DATA ==========
+    const hustles = [
+      {
+        id: "tech-setup",
+        num: "HUSTLE #01",
+        title: "COZY TECH SETUP FOR SENIORS",
+        subtitle: "The $0 hustle hiding on Nextdoor",
+        cost: "$0", time: "1 DAY", skill: "BEGINNER", featured: false,
+        hook: [
+          "Every Bay Area family has a parent or grandparent who just got a new iPhone, printer, or Wi-Fi router and is stuck. Best Buy wants $199 to show up in 4 days. You can be there in 45 minutes.",
+          "This is pure service arbitrage. No inventory, no shipping, no returns. You walk in with patience, walk out with $79 and a 5-star review that books you 3 more houses on the same block."
+        ],
+        howItWorks: [
+          { label: "POST", desc: "Nextdoor post: 'Local tech help for seniors - $49 setup'" },
+          { label: "PROOF", desc: "Do 2 free jobs for neighbors, get video testimonials" },
+          { label: "RETAINER", desc: "Offer $29/mo 'Grandkid on call' retainer" }
+        ],
+        bayEdge: [
+          "Highest density of dual-income families who outsource care",
+          "Nextdoor is hyper-active in Oakland/Berkeley",
+          "Seniors have disposable income + zero patience for Geek Squad"
+        ],
+        steps: [
+          "Post on Nextdoor + 2 local FB groups: 'I help seniors in [neighborhood] set up phones/printers/WiFi'",
+          "Print 50 flyers at library, tape at 3 coffee shops + senior centers",
+          "Do 2 free setups for neighbors (30 min each), film 15s testimonial",
+          "Set up Square link + Calendly, set rate $49 first visit, $79 after",
+          "Offer $29/mo retainer: 'text me any tech question, I fix in 24h'"
+        ],
+        numbers: { cogs: "$0", price: "$79", profit: "$79", monthly: "$948" },
+        offer: "I help seniors in Berkeley/Oakland get their new phone, printer & WiFi working today for $49. Includes: in-home setup + big-print cheat sheet + 7 days text support. Same-day slots.",
+        script: "Hi [Name] - saw your post about your mom's new iPad. I do friendly in-home tech help here in [Neighborhood] - $49 for setup + cheat sheet. I have a slot today at 4pm if you want me to swing by? I just helped [Neighbor] down the street."
+      },
+      {
+        id: "airbnb-refresh",
+        num: "HUSTLE #02 • FEATURED",
+        title: "AIRBNB LISTING PHOTO REFRESH",
+        subtitle: "Your $149 fix for their $2,900 vacancy",
+        cost: "$0", time: "1 DAY", skill: "BEGINNER", featured: true,
+        hook: [
+          "Scroll Craigslist housing. 80% of listings use dark, crooked iPhone photos taken at night. Every day those photos sit, the landlord loses $90-150. Your bright photos are not art — they are vacancy insurance.",
+          "This is the image the buyer clicked on. Left = what every landlord posts. Right = what you deliver in 60 minutes with an iPhone 0.5x lens and a 5-minute Lightroom preset. No DSLR needed."
+        ],
+        howItWorks: [
+          { label: "FIND", desc: "5 bad listings on Craigslist with dark photos" },
+          { label: "RESHOOT", desc: "1 free room demo, edit in 5-min preset" },
+          { label: "DELIVER", desc: "$149 for 25 bright photos via Drive" }
+        ],
+        bayEdge: [
+          "4,200+ small landlords in Oakland",
+          "High rent = high cost of bad photos",
+          "Walk/bike to shoots, same-day delivery"
+        ],
+        steps: [
+          "Find 5 bad listings on Craigslist / Zillow with dark or crooked photos",
+          "Reshoot 1 free room for proof (same angle, lights ON, declutter 2 min)",
+          "Post before/after split on Instagram + Nextdoor",
+          "DM 20 landlords: offer free mockup of their current listing",
+          "Deliver 25 photos via Google Drive, charge $149"
+        ],
+        numbers: { cogs: "$0", price: "$149", profit: "$149", monthly: "$1,788" },
+        offer: "I turn dark listing photos into bright, bookable photos in 60 mins for $149. 25 photos + cover. iPhone only. Same-day Oakland delivery.",
+        script: "Quick Q - are you still renting the place on [Street]? I made a free mockup of how the living room would look with better light - want me to send it? No obligation."
+      },
+      {
+        id: "thrift-flip",
+        num: "HUSTLE #03",
+        title: "THRIFT FLIP: WORKWEAR TO STREETWEAR",
+        subtitle: "Carhartt arbitrage in the East Bay",
+        cost: "$40", time: "2 DAYS", skill: "BEGINNER", featured: false,
+        hook: [
+          "East Bay thrift stores are full of Carhartt, Dickies, and vintage workwear that SF streetwear kids pay $80–$150 for. You buy dirty, clean it, stage it, flip it.",
+          "Zero making required. Pure curation + photography. One Saturday morning run + good lighting = $300–$600 profit."
+        ],
+        howItWorks: [
+          { label: "SOURCE", desc: "Thrift 3–4 stores for Carhartt / Dickies / vintage" },
+          { label: "CLEAN", desc: "Wash, steam, photo on simple backdrop" },
+          { label: "SELL", desc: "Depop + Instagram + local pickup" }
+        ],
+        bayEdge: [
+          "Oakland / Berkeley thrift density is insane",
+          "SF & Peninsula buyers will drive or pay shipping",
+          "Workwear trend is multi-year, not seasonal"
+        ],
+        steps: [
+          "Hit 3 thrift stores this weekend with $40 budget, focus Carhartt jackets + overalls",
+          "Wash + steam everything, photograph on neutral backdrop with phone",
+          "List on Depop + Instagram Stories with measurements + story",
+          "Offer local pickup in Oakland for faster cash",
+          "Reinvest first profits into better pieces"
+        ],
+        numbers: { cogs: "$40", price: "$120", profit: "$80", monthly: "$960" },
+        offer: "Clean, staged Carhartt & workwear from East Bay thrift — ready to wear. Local pickup Oakland or ship. $45–$120 pieces.",
+        script: "Hey — just listed a Carhartt Detroit jacket, medium, almost new condition. Grabbed it from an Oakland thrift this morning. Want first dibs before it goes on Depop?"
+      },
+      {
+        id: "dog-detail",
+        num: "HUSTLE #04",
+        title: "MOBILE DETAIL FOR DOG PARENTS",
+        subtitle: "The $80 kit that prints $180",
+        cost: "$80", time: "3 DAYS", skill: "BEGINNER", featured: false,
+        hook: [
+          "Bay Area dog owners spend thousands on their pets and then drive around in cars full of fur, mud, and drool. Traditional detail shops hate dog hair. You specialize in it.",
+          "Mobile = no rent. Dog parents = high willingness to pay. Same-day service on Nextdoor books fast."
+        ],
+        howItWorks: [
+          { label: "KIT", desc: "Buy pet-hair vacuum + interior cleaners (~$80)" },
+          { label: "OFFER", desc: "Dog-hair interior detail $149–$189" },
+          { label: "BOOK", desc: "Nextdoor + dog-park flyers" }
+        ],
+        bayEdge: [
+          "Highest pet ownership density in the US",
+          "Many dual-income households with multiple dogs",
+          "Parking + apartment living = dirty cars"
+        ],
+        steps: [
+          "Buy portable vacuum + pet-hair tools + interior chemicals ($80–$100)",
+          "Practice on your own car + 1 friend's dog-hair car, take before/after",
+          "Post on Nextdoor: 'Dog-hair interior detail, mobile, Oakland'",
+          "Price $149 sedan / $189 SUV, same-day slots",
+          "Offer $29 add-on for trunk or monthly package"
+        ],
+        numbers: { cogs: "$25", price: "$169", profit: "$144", monthly: "$1,728" },
+        offer: "Mobile interior detail specialized for dog parents. Fur, mud, nose prints gone. Oakland same-day. $149–$189.",
+        script: "Saw your post about the dog hair in the back seat 😅 I do mobile interior details just for dog people in Oakland. Have a free slot this afternoon if you want it gone today."
+      },
+      {
+        id: "notion-barber",
+        num: "HUSTLE #05",
+        title: "NOTION TEMPLATES FOR BARBERSHOPS",
+        subtitle: "Sell the same file 100 times",
+        cost: "$0", time: "4 DAYS", skill: "BEGINNER", featured: false,
+        hook: [
+          "Local barbers and beauty shops still run on paper or messy Google Sheets. You build one clean Notion system (clients, appointments, inventory, tips) and sell the template over and over.",
+          "Zero marginal cost after the first version. One Loom walkthrough and you can charge $79–$149."
+        ],
+        howItWorks: [
+          { label: "BUILD", desc: "One solid Notion template for appointments + clients" },
+          { label: "DEMO", desc: "Record 5-min Loom of setup" },
+          { label: "SELL", desc: "DM shops + list on Gumroad" }
+        ],
+        bayEdge: [
+          "Dense small-business density in Oakland / Fruitvale / Berkeley",
+          "Many Spanish-speaking shops underserved by tech",
+          "Word of mouth between shops is strong"
+        ],
+        steps: [
+          "Build a simple Notion: Clients, Appointments, Inventory, Daily Cash",
+          "Record a 5-minute Loom showing how to duplicate and use it",
+          "Walk into 5 shops with laptop, show live demo",
+          "Price $79 (template) or $149 (template + setup help)",
+          "List on Gumroad and post in local Facebook groups"
+        ],
+        numbers: { cogs: "$0", price: "$99", profit: "$99", monthly: "$1,188" },
+        offer: "Notion system built for barbershops: clients, appointments, inventory, tips tracking. 10-minute setup. $79 template or $149 with me setting it up for you.",
+        script: "Hey — I noticed a lot of shops still using paper for appointments. I built a simple Notion template that handles clients + bookings + daily cash. Want me to show you a 3-minute demo this week?"
+      },
+      {
+        id: "jewelry-market",
+        num: "HUSTLE #06",
+        title: "MINIMALIST JEWELRY • LAKE MERRITT MARKET",
+        subtitle: "The $100 stall that does $600 Saturdays",
+        cost: "$100", time: "5 DAYS", skill: "BEGINNER", featured: false,
+        hook: [
+          "You don't make the jewelry. You curate gold-filled and minimalist pieces, set up a clean table at Lake Merritt or local markets, and sell the story + aesthetic.",
+          "$100 wholesale order + nice display = $400–$700 day if the presentation is tight."
+        ],
+        howItWorks: [
+          { label: "SOURCE", desc: "Wholesale gold-filled / minimalist jewelry" },
+          { label: "STAGE", desc: "Clean table, good lighting, story cards" },
+          { label: "SELL", desc: "Lake Merritt + local markets" }
+        ],
+        bayEdge: [
+          "Lake Merritt + First Friday + local markets are reliable",
+          "Young professional + tourist mix",
+          "High willingness to pay for 'local + aesthetic'"
+        ],
+        steps: [
+          "Order $100 of gold-filled chains / hoops / rings from a wholesale supplier",
+          "Buy simple black tablecloth, display stands, business cards",
+          "Practice pricing and 15-second story for each piece",
+          "Book one market stall (Lake Merritt or similar)",
+          "Sell, collect emails, offer $10 off next purchase via Instagram"
+        ],
+        numbers: { cogs: "$35", price: "$65", profit: "$30", monthly: "$1,200" },
+        offer: "Minimalist gold-filled jewelry curated for everyday wear. Lake Merritt market Saturdays. $28–$85 pieces.",
+        script: "Hey — I'm at Lake Merritt this Saturday with a small table of gold-filled pieces. If you're around, come say hi. I'll hold a pair of the thin hoops for you if you want."
+      },
+      {
+        id: "ai-listing",
+        num: "HUSTLE #07 • AI-POWERED",
+        title: "AI LISTING DESCRIPTION ENGINE",
+        subtitle: "Turn ugly Craigslist copy into booked showings with ChatGPT",
+        cost: "$0", time: "1 DAY", skill: "BEGINNER", featured: false,
+        hook: [
+          "Most landlords write listings like they're filing a police report. You take their photos + basic facts and turn them into high-converting descriptions in 10 minutes with ChatGPT.",
+          "Bundle with the photo hustle or sell standalone for $49–$79 per listing."
+        ],
+        howItWorks: [
+          { label: "INTAKE", desc: "Get photos + 5 facts from landlord" },
+          { label: "PROMPT", desc: "Run through your proven prompt pack" },
+          { label: "DELIVER", desc: "Title + description + bullet highlights" }
+        ],
+        bayEdge: [
+          "Thousands of amateur landlords on Craigslist",
+          "Vacancy cost is extremely high",
+          "Pairs perfectly with the photo refresh hustle"
+        ],
+        steps: [
+          "Create a reusable ChatGPT prompt that produces title + description + bullets",
+          "Offer free rewrite of one bad listing as proof",
+          "DM landlords who already have good photos but weak copy",
+          "Price $49 solo or $79 as add-on to photo package",
+          "Save every winning description as a template for speed"
+        ],
+        numbers: { cogs: "$0", price: "$59", profit: "$59", monthly: "$1,180" },
+        offer: "I rewrite your rental listing so it actually gets showings. Title + description + highlight bullets in 24 hours. $49–$79.",
+        script: "Your photos are solid but the description is burying the best features. I can rewrite the whole listing in under an hour so it converts better — want a free sample of the first paragraph?"
+      },
+      {
+        id: "ai-headshot",
+        num: "HUSTLE #08 • AI-POWERED",
+        title: "AI HEADSHOT STUDIO FOR LINKEDIN",
+        subtitle: "$39 studio look from an iPhone photo — no photographer",
+        cost: "$0", time: "2 DAYS", skill: "BEGINNER", featured: false,
+        hook: [
+          "Professionals in SF/Oakland need updated LinkedIn headshots but hate studio prices and scheduling. You take their phone selfies and produce 4–6 studio-quality options with AI tools.",
+          "High perceived value, almost zero cost, fast turnaround."
+        ],
+        howItWorks: [
+          { label: "COLLECT", desc: "Client sends 3–5 casual photos" },
+          { label: "GENERATE", desc: "Run through AI headshot tools + light edit" },
+          { label: "DELIVER", desc: "4 polished options in 24–48h" }
+        ],
+        bayEdge: [
+          "Massive professional population in the Bay",
+          "Constant job switching and networking",
+          "People already comfortable with AI tools"
+        ],
+        steps: [
+          "Test 2–3 AI headshot tools and lock a consistent workflow",
+          "Offer free headshot to 3 friends for testimonials",
+          "Post before/after on LinkedIn and Instagram",
+          "Price $39 for 4 options, $69 for priority + extra variations",
+          "Upsell: full personal brand package later"
+        ],
+        numbers: { cogs: "$2", price: "$39", profit: "$37", monthly: "$1,480" },
+        offer: "Studio-quality LinkedIn headshots from your phone photos. 4 options delivered in 48 hours. $39.",
+        script: "Your current LinkedIn photo is fine but not 'open to work / new role' energy. I can turn a couple of your phone pics into studio-looking headshots for $39 — want me to do a free sample?"
+      },
+      {
+        id: "ai-menu",
+        num: "HUSTLE #09 • AI-POWERED",
+        title: "AI MENU & FLYER STUDIO FOR TAQUERIAS",
+        subtitle: "Canva + AI = $129 menus that save restaurants 3 hours",
+        cost: "$0", time: "3 DAYS", skill: "BEGINNER", featured: false,
+        hook: [
+          "Local taquerias and small restaurants still use blurry, hard-to-read menus. You redesign them in Canva with AI-generated food photography and clean typography, then deliver print-ready + Instagram versions.",
+          "High impact, repeatable, and shops talk to each other."
+        ],
+        howItWorks: [
+          { label: "PHOTO", desc: "Shoot or AI-generate clean food shots" },
+          { label: "DESIGN", desc: "Canva template + AI copy polish" },
+          { label: "DELIVER", desc: "Print PDF + IG story + QR version" }
+        ],
+        bayEdge: [
+          "Dense independent restaurant scene in Oakland / Berkeley",
+          "Many owners are time-poor and design-averse",
+          "Word of mouth between neighboring shops is fast"
+        ],
+        steps: [
+          "Build 2–3 Canva menu templates (classic + modern)",
+          "Offer one free redesign of a half-menu as proof",
+          "Walk into 5 local spots with iPad and show the difference",
+          "Price $129 full menu + IG assets, $49/mo for weekly specials",
+          "Collect before/after and post them"
+        ],
+        numbers: { cogs: "$0", price: "$129", profit: "$129", monthly: "$1,548" },
+        offer: "I redesign your menu so it's easy to read and looks premium. Print PDF 11x17 + Instagram story + QR code. Same-day Oakland. $49/mo for weekly specials.",
+        script: "Hola! I was eating here last week and loved the al pastor. Quick idea — your menu is hard to read and you're losing Uber Eats clicks. I redesigned the top half for free in 15 mins on my iPad — want to see? $129 for full menu + IG version, today."
+      }
+    ];
+
+    const checklistData = {
+      week_1: [
+        { task: "Pick 2 hustles from book" },
+        { task: "Buy minimal supplies (<$100)" },
+        { task: "Do 2 free jobs for before/after proof", tip: "Use before/after split: dark iPhone vs bright edited" },
+        { task: "Create Instagram Reel showing process" }
+      ],
+      week_2: [
+        { task: "Post on Nextdoor + OfferUp + FB Marketplace" },
+        { task: "Send 20 DMs using Template #1" },
+        { task: "Book 2 paid jobs at intro price" },
+        { task: "Set up Square / Gumroad payment" }
+      ],
+      week_3: [
+        { task: "Raise price $10" },
+        { task: "Add 1 upsell (e.g. description writing, pet hair)" },
+        { task: "Collect 3 video testimonials (15 sec each)" }
+      ],
+      week_4: [
+        { task: "Create checklist/SOP from what you did" },
+        { task: "Schedule recurring posts (M/W/F)" },
+        { task: "Launch ebook on Gumroad at $27–$47" }
+      ]
+    };
+
+    const chapterTemplate = `# CHAPTER TEMPLATE
+
+## 1. Header Block
+- HUSTLE #XX • [FEATURED / AI-POWERED]
+- Title in ALL CAPS
+- Badges: $cost • time • skill level
+
+## 2. Hook (1–2 paragraphs)
+Bay Area pain → your specific fix. Make the cost of inaction vivid.
+
+## 3. Hero Visual
+Before/After or process shot. Caption what the image teaches.
+
+## 4. How It Works (3 steps)
+Short labels + one-line descriptions.
+
+## 5. Bay Area Edge (3 bullets)
+Why this works specifically here.
+
+## 6. Offer Box (copyable)
+One tight sentence the buyer can paste.
+
+## 7. Action Steps (5 checkboxes)
+Concrete actions to first dollar.
+
+## 8. Numbers
+COGS • Sell price • Profit/job • 3/week monthly estimate
+
+## 9. DM Script
+Ready-to-send message with placeholders.
+
+## 10. Upsell Ladder
+Core → add-on → retainer`;
+
+    // ========== COMPONENTS ==========
+    function CopyBtn({ text, label = "Copy", className = "" }) {
+      const [copied, setCopied] = useState(false);
+      const copy = async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (e) {}
+      };
+      return (
+        <button onClick={copy} className={`rounded-full font-semibold flex items-center gap-1 transition hover:brightness-110 ${className}`}>
+          {copied ? "✓ Copied" : label}
+        </button>
+      );
+    }
+
+    function Check({ checked, onChange, children }) {
+      return (
+        <label className="flex gap-2.5 items-start cursor-pointer group">
+          <button type="button" onClick={onChange}
+            className={`mt-0.5 w-[18px] h-[18px] rounded-[5px] border flex items-center justify-center shrink-0 transition ${
+              checked ? "bg-[#FF6A00] border-[#FF6A00]" : "bg-[#121212] border-[#2A2A2A] group-hover:border-[#3A3A3A]"
+            }`}>
+            {checked && <span className="text-black text-[11px] font-bold">✓</span>}
+          </button>
+          <span className={`text-[13px] leading-[1.4] transition ${checked ? "line-through opacity-60" : ""}`}>{children}</span>
+        </label>
+      );
+    }
+
+    function navigate(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function App() {
+      const [hustleSteps, setHustleSteps] = useState(() => {
+        const init = {};
+        hustles.forEach(h => { init[h.id] = Array(h.steps.length).fill(false); });
+        return init;
+      });
+      const [weekState, setWeekState] = useState(() => {
+        const init = {};
+        Object.entries(checklistData).forEach(([w, t]) => { init[w] = Array(t.length).fill(false); });
+        return init;
+      });
+      const [scrollPct, setScrollPct] = useState(0);
+      const [toast, setToast] = useState(null);
+      const [showWelcome, setShowWelcome] = useState(false);
+      const toastTimer = React.useRef(null);
+      const shownMilestones = React.useRef(new Set());
+
+      const showToast = (title, body, tone = "neutral") => {
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast({ title, body, tone });
+        toastTimer.current = setTimeout(() => setToast(null), 5200);
+      };
+
+      useEffect(() => {
+        const onScroll = () => {
+          const total = document.documentElement.scrollHeight - window.innerHeight;
+          setScrollPct(total > 0 ? Math.min(100, Math.round((window.scrollY / total) * 100)) : 0);
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+      }, []);
+
+      // First-session orientation + return-visit retention cue
+      useEffect(() => {
+        try {
+          const key = "bash_playbook_visits";
+          const visits = parseInt(localStorage.getItem(key) || "0", 10) + 1;
+          localStorage.setItem(key, String(visits));
+          if (visits === 1) {
+            setShowWelcome(true);
+          } else if (visits === 2) {
+            showToast(
+              "Session resumed",
+              "Your prior checklist state remains available in this browser. Resume at the incomplete milestone to preserve operational continuity.",
+              "info"
+            );
+          } else if (visits >= 3) {
+            showToast(
+              "Return pathway active",
+              "Operators who re-engage within seventy-two hours convert first revenue at a measurably higher rate. Select one incomplete action step and execute it before exit.",
+              "info"
+            );
+          }
+        } catch (e) {}
+      }, []);
+
+      const checkProgress = useMemo(() => {
+        let done = 0, total = 0;
+        Object.values(weekState).forEach(arr => arr.forEach(v => { total++; if (v) done++; }));
+        return total === 0 ? 0 : Math.round((done / total) * 100);
+      }, [weekState]);
+
+      // Milestone retention messages
+      useEffect(() => {
+        const p = checkProgress;
+        const fire = (id, title, body, tone) => {
+          if (shownMilestones.current.has(id)) return;
+          shownMilestones.current.add(id);
+          showToast(title, body, tone);
+        };
+        if (p >= 25 && p < 50) fire("m25", "Quarter-mark secured", "Twenty-five percent of the thirty-day launch sequence is complete. Momentum compounds when the next checklist item is executed within this session.", "success");
+        if (p >= 50 && p < 75) fire("m50", "Midpoint threshold", "Half the launch protocol is logged. At this stage, most operators who continue through week three establish a repeatable acquisition channel.", "success");
+        if (p >= 75 && p < 100) fire("m75", "Final quadrant", "Seventy-five percent complete. The remaining steps convert documentation into a shippable product surface—template, pricing, and distribution.", "success");
+        if (p === 100) fire("m100", "Launch protocol complete", "The thirty-day sequence is fully marked. Raise unit pricing, archive your before-and-after proof, and duplicate the chapter template for the next offer.", "success");
+      }, [checkProgress]);
+
+      const toggleHustle = (id, i) => {
+        setHustleSteps(prev => {
+          const next = { ...prev, [id]: [...prev[id]] };
+          next[id][i] = !next[id][i];
+          const completed = next[id].filter(Boolean).length;
+          if (completed === 1 && !shownMilestones.current.has("first-step-" + id)) {
+            shownMilestones.current.add("first-step-" + id);
+            showToast("Action step recorded", "The first discrete task is logged. Operators who complete three sequential steps in one sitting close the path to first revenue materially faster.", "success");
+          }
+          if (completed === next[id].length && next[id].length > 0) {
+            showToast("Hustle sequence complete", "All five action steps for this chapter are marked. Capture proof assets, then advance to the thirty-day checklist to lock the cadence.", "success");
+          }
+          return next;
+        });
+      };
+      const toggleWeek = (w, i) => {
+        setWeekState(prev => {
+          const next = { ...prev, [w]: [...prev[w]] };
+          next[w][i] = !next[w][i];
+          return next;
+        });
+      };
+
+      const exportCheck = () => {
+        let md = "# 30-Day Launch Checklist\n\n";
+        Object.entries(checklistData).forEach(([week, tasks]) => {
+          md += `## ${week.replace("_", " ").toUpperCase()}\n\n`;
+          tasks.forEach((t, i) => { md += `- [${weekState[week]?.[i] ? "x" : " "}] ${t.task}\n`; });
+          md += "\n";
+        });
+        const blob = new Blob([md], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "30-day-checklist.md"; a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const nav = [
+        { id: "hero", label: "Cover" },
+        { id: "template-system", label: "Templates" },
+        { id: "chapters", label: "Hustles" },
+        { id: "checklist", label: "Checklist" },
+        { id: "sell", label: "Sell" }
+      ];
+
+      return (
+        <div className="min-h-screen bg-[#080808] text-[#F2F0E8]">
+          {/* Welcome / first-session modal */}
+          {showWelcome && (
+            <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+              <div className="w-full max-w-[420px] rounded-[20px] border border-[#2A2A2A] bg-[#121212] shadow-2xl overflow-hidden">
+                <div className="h-1 bg-[#FF6A00]" />
+                <div className="p-6 space-y-4">
+                  <p className="text-[10px] tracking-[0.2em] font-semibold text-[#FF6A00]">ORIENTATION PROTOCOL</p>
+                  <h2 id="welcome-title" className="condensed text-[26px] leading-[1] uppercase">Establish operational clarity</h2>
+                  <p className="text-[13px] leading-[1.6] text-gray-400">
+                    This playbook is structured as a sequential field manual: nine illustrated offers, copy-ready scripts, and a thirty-day launch checklist. Progress is stored locally in this browser so your cadence survives interruptions.
+                  </p>
+                  <ul className="space-y-2 text-[12px] text-gray-300">
+                    <li className="flex gap-2"><span className="text-[#FF6A00]">01</span> Select one hustle aligned to capital and calendar constraints.</li>
+                    <li className="flex gap-2"><span className="text-[#FF6A00]">02</span> Execute the five action steps; log each checkbox as evidence.</li>
+                    <li className="flex gap-2"><span className="text-[#FF6A00]">03</span> Advance the master checklist weekly to protect retention of intent.</li>
+                  </ul>
+                  <button
+                    onClick={() => { setShowWelcome(false); navigate("chapters"); showToast("Field guide armed", "Navigate the hustle inventory. Copy offer language and DM scripts directly from each chapter surface.", "info"); }}
+                    className="w-full h-11 rounded-full bg-[#FF6A00] text-black font-semibold text-[13px] hover:brightness-110 transition"
+                  >
+                    Enter hustle inventory
+                  </button>
+                  <button onClick={() => setShowWelcome(false)} className="w-full text-[12px] text-gray-500 hover:text-gray-300 transition">
+                    Dismiss orientation
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Transient guidance toast */}
+          {toast && (
+            <div className="fixed top-[72px] left-4 right-4 z-[90] flex justify-center pointer-events-none" role="status">
+              <div className={`pointer-events-auto max-w-[440px] w-full rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-xl ${
+                toast.tone === "success" ? "border-[#FF6A00]/50 bg-[#1A1208]/95" :
+                toast.tone === "info" ? "border-[#3A3A3A] bg-[#121212]/95" :
+                "border-[#2A2A2A] bg-[#121212]/95"
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className={`text-[11px] font-bold tracking-[0.14em] uppercase mb-1 ${toast.tone === "success" ? "text-[#FF6A00]" : "text-gray-400"}`}>{toast.title}</p>
+                    <p className="text-[12px] leading-[1.5] text-gray-300">{toast.body}</p>
+                  </div>
+                  <button onClick={() => setToast(null)} className="text-gray-500 hover:text-white text-[14px] shrink-0" aria-label="Dismiss">×</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Header */}
+          <header className="sticky top-0 z-50 border-b border-[#2A2A2A] bg-[#080808]/90 backdrop-blur-xl">
+            <div className="max-w-[1440px] mx-auto px-5 md:px-10 h-[58px] flex items-center justify-between">
+              <button onClick={() => navigate("hero")} className="flex items-center gap-2 condensed text-[14px] tracking-wide uppercase hover:text-[#FF6A00] transition">
+                <svg width="36" height="18" viewBox="0 0 420 100" className="text-[#FF6A00] shrink-0" aria-hidden="true">
+                  {/* Mini: City Hall dome · Ordway · Tribune spire · Federal twins */}
+                  <path fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round"
+                    d="M10 95 L10 60 L22 60 L22 40 L30 40 L30 28 L38 28 L38 18 L46 18 L46 28 L54 28 L54 40 L62 40 L62 60 L75 60 L75 90
+                       M90 90 L90 48 L102 48 L102 28 L114 28 L114 16 L126 16 L126 28 L138 28 L138 48 L150 48 L150 85
+                       M165 85 L165 40 L178 40 L178 22 L190 22 L190 10 L202 10 L202 4 L214 4 L214 10 L226 10 L226 22 L238 22 L238 40 L252 40 L252 80
+                       M268 80 L268 42 L280 42 L280 26 L294 26 L294 42 L308 42 L308 72
+                       M322 72 L322 38 L334 38 L334 22 L346 22 L346 38 L358 38 L358 70
+                       M372 70 L372 48 L390 48 L390 95" />
+                  <path fill="none" stroke="currentColor" strokeWidth="4" d="M38 18 Q42 10 46 18" />
+                  <line x1="208" y1="4" x2="208" y2="0" stroke="currentColor" strokeWidth="3.5" />
+                </svg>
+                Bay Area Side Hustle
+              </button>
+              <nav className="hidden md:flex items-center gap-1">
+                {nav.map(n => (
+                  <button key={n.id} onClick={() => navigate(n.id)}
+                    className="px-3 py-1.5 rounded-full text-[12px] font-medium text-gray-400 hover:text-white hover:bg-[#1A1A1A] transition">
+                    {n.label}
+                  </button>
+                ))}
+              </nav>
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:block w-20 h-1 rounded-full bg-[#121212] border border-[#2A2A2A] overflow-hidden">
+                  <div className="h-full bg-[#FF6A00] transition-all" style={{ width: `${scrollPct}%` }} />
+                </div>
+                <span className="text-[11px] text-gray-500 hidden sm:inline">{scrollPct}%</span>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-[1440px] mx-auto">
+            {/* HERO */}
+            <section id="hero" className="px-5 md:px-10 py-12 md:py-16 border-b border-[#2A2A2A] relative overflow-hidden">
+              {/* Full-width skyline watermark behind hero — tuned for contrast */}
+              <div className="absolute inset-x-0 bottom-0 pointer-events-none">
+                <OaklandSkyline className="hero-skyline" height={180} showFill={true} />
+              </div>
+              <div className="relative z-10 grid md:grid-cols-[1.15fr_0.85fr] gap-10 items-center">
+                <div className="space-y-6 order-2 md:order-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#2A2A2A] bg-[#121212] text-[11px] font-medium">
+                    <span className="px-1.5 py-0.5 rounded bg-[#FF6A00] text-black text-[9px] font-bold tracking-widest">NEW</span>
+                    <span className="text-gray-400">9 chapters (3 AI) + templates + checklist</span>
+                  </div>
+                  <div className="space-y-3">
+                    <h1 className="condensed text-[44px] md:text-[64px] leading-[0.9] uppercase">
+                      THE BAY AREA<br />
+                      <span className="text-[#FF6A00]">SIDE HUSTLE</span><br />
+                      PLAYBOOK
+                    </h1>
+                    <p className="text-[18px] md:text-[20px] leading-[1.3] max-w-[520px]">
+                      9 Low-Cost Hustles — 6 Classic + 3 AI-Powered You Can Start This Weekend
+                    </p>
+                    <p className="text-[14px] leading-[1.6] max-w-[520px] text-gray-400">
+                      No fluff. 6 proven Oakland/Berkeley hustles + 3 AI hustles. $0–$100 to start, same-day cash, copyable scripts.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {["$0–$100 start", "1–7 days to first $", "Beginner friendly", "3 AI hustles"].map(t => (
+                      <span key={t} className="px-2.5 py-1 rounded-full border border-[#2A2A2A] text-[11px] text-gray-400 bg-[#121212]">{t}</span>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button onClick={() => navigate("chapters")}
+                      className="h-[44px] px-6 rounded-full bg-[#FF6A00] text-black font-semibold text-[14px] hover:brightness-110 transition">
+                      Explore Hustles
+                    </button>
+                    <button onClick={() => navigate("template-system")}
+                      className="h-[44px] px-6 rounded-full border border-[#2A2A2A] bg-[#121212] text-[14px] font-medium hover:bg-[#1A1A1A] transition">
+                      View Templates
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-4 pt-2 text-[12px] text-gray-400">
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-emerald-400">✓</span> 9 hustles (3 AI) • 30-day plan
+                    </span>
+                    <span className="hidden md:inline">•</span>
+                    <span>Gumroad $27–$47</span>
+                  </div>
+                </div>
+                <div className="order-1 md:order-2 flex justify-center">
+                  <div className="relative w-full max-w-[340px] aspect-[3/4] rounded-[20px] overflow-hidden border border-[#2A2A2A] bg-gradient-to-br from-[#1F1F1F] via-[#121212] to-[#080808] shadow-2xl flex flex-col">
+                    {/* Cover skyline illustration */}
+                    <div className="absolute inset-x-0 bottom-0 opacity-90">
+                      <OaklandSkyline className="cover-skyline" height={140} showFill={true} />
+                    </div>
+                    <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8 text-center">
+                      <div className="text-[10px] tracking-[0.18em] font-semibold text-[#FF6A00] mb-4">DIGITAL PLAYBOOK</div>
+                      <div className="condensed text-[28px] leading-[1] uppercase mb-3">Bay Area<br />Side Hustle<br />Playbook</div>
+                      <div className="text-[13px] text-gray-400 mb-2">9 hustles • Templates • Scripts</div>
+                      <div className="text-[10px] tracking-[0.12em] text-gray-500 mb-4 uppercase">Oakland · Berkeley · East Bay</div>
+                      <div className="px-3 py-1 rounded-full bg-[#FF6A00] text-black text-[11px] font-bold">$27–$47</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* TEMPLATE SYSTEM */}
+            <section id="template-system" className="px-5 md:px-10 py-12 md:py-16 space-y-8 border-b border-[#2A2A2A]">
+              <SkylineDivider className="mb-2 -mx-5 md:-mx-10" />
+              <div className="flex items-start justify-between gap-6 flex-wrap">
+                <div className="space-y-3 max-w-[720px]">
+                  <div className="text-[10px] tracking-[0.18em] font-semibold text-[#FF6A00]">CHAPTER TEMPLATE SYSTEM • REUSABLE BLUEPRINT</div>
+                  <h2 className="condensed text-[36px] md:text-[48px] leading-[0.95] uppercase">Every Chapter Follows This Anatomy</h2>
+                  <p className="text-[14px] leading-[1.6] text-gray-400">Duplicate this for any new hustle. Same structure = consistent buyer experience.</p>
+                </div>
+                <CopyBtn text={chapterTemplate} label="Copy Chapter Template" className="h-10 px-5 bg-white text-black text-[13px] shrink-0" />
+              </div>
+              <div className="rounded-[20px] overflow-hidden border border-[#2A2A2A] bg-[#121212] grid md:grid-cols-[1.15fr_0.85fr]">
+                <div className="p-6 md:p-8 space-y-6">
+                  <div className="flex flex-wrap gap-2">
+                    {["Header: Number + Title + Badges", "Hook: Pain → Fix", "Visual: Before/After", "Edge: Why Bay Area", "Offer: Copyable", "Steps: 5 checkboxes", "Numbers: Profit math", "Scripts: DM"].map(t => (
+                      <div key={t} className="px-2.5 py-1 rounded-full border border-[#2A2A2A] text-[10px] font-semibold text-gray-400 flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-[#FF6A00]" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808]">
+                    <p className="text-[10px] tracking-widest font-semibold mb-2 text-gray-400">HEADER BLOCK</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-1 rounded bg-[#1A1A1A] text-[11px] font-mono">HUSTLE #02 • FEATURED</span>
+                      <span className="text-[14px] font-bold">AIRBNB PHOTO REFRESH</span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#FF6A00] text-black text-[10px] font-bold">$0 • 1 DAY • BEGINNER</span>
+                    </div>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-[#2A2A2A] bg-black">
+                    <div className="relative h-[160px] bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] flex items-center justify-center">
+                      <div className="absolute inset-0 grid grid-cols-2">
+                        <div className="bg-black/40 flex items-end p-4 border-r border-white/10">
+                          <div className="text-[11px]"><span className="text-[#FF6A6A] font-semibold">← LEFT</span><br /><span className="text-gray-400">Landlord iPhone, lights off</span></div>
+                        </div>
+                        <div className="bg-black/20 flex items-end justify-end p-4 text-right">
+                          <div className="text-[11px]"><span className="text-[#7CFF7C] font-semibold">RIGHT →</span><br /><span className="text-gray-400">Your $149 delivery</span></div>
+                        </div>
+                      </div>
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#FF6A00] text-black text-[10px] font-bold">5-MIN PRESET</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808]">
+                      <p className="text-[10px] tracking-widest font-semibold mb-2 text-gray-400">BAY AREA EDGE</p>
+                      <ul className="space-y-1.5 text-[12px]"><li>• 4,200+ small landlords</li><li>• High rent = costly bad photos</li><li>• Walk/bike, same-day delivery</li></ul>
+                    </div>
+                    <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808]">
+                      <p className="text-[10px] tracking-widest font-semibold mb-2 text-gray-400">OFFER BOX</p>
+                      <p className="text-[12px] mono p-2.5 rounded bg-[#121212] border border-[#222]">I turn dark listing photos into bright, bookable photos in 60 mins for $149.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 md:p-8 border-t md:border-t-0 md:border-l border-[#2A2A2A] space-y-6 bg-[#0E0E0E]">
+                  <div>
+                    <h3 className="condensed text-[18px] uppercase mb-2">How To Duplicate</h3>
+                    <p className="text-[13px] leading-[1.5] text-gray-400">Copy the markdown. Replace image, badges, steps. Keep the anatomy.</p>
+                  </div>
+                  <div className="space-y-2">
+                    {["Header with cost/time/skill badges", "Hook formula (pain → fix)", "Before/After visual box", "Bay Area Edge 3 bullets", "Copyable offer + DM scripts", "5-step checklist", "Numbers + upsell ladder"].map(i => (
+                      <div key={i} className="flex gap-2 text-[12px]"><span className="text-[#FF6A00]">→</span> {i}</div>
+                    ))}
+                  </div>
+                  <div className="rounded-xl p-4 bg-[#080808] border border-[#2A2A2A] space-y-3">
+                    <p className="text-[11px] font-semibold tracking-widest text-gray-400">TEMPLATE FILE</p>
+                    <pre className="mono text-[11px] leading-[1.5] max-h-[140px] overflow-y-auto p-3 rounded bg-[#121212] border border-[#222] text-gray-400 whitespace-pre-wrap">{chapterTemplate.slice(0, 500)}...</pre>
+                    <CopyBtn text={chapterTemplate} label="Copy Full Template MD" className="w-full h-9 bg-[#FF6A00] text-black text-[12px] justify-center" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* CHAPTERS */}
+            <section id="chapters" className="px-5 md:px-10 py-12 md:py-16 space-y-12 border-b border-[#2A2A2A]">
+              <SkylineDivider className="mb-2 -mx-5 md:-mx-10" />
+              <div className="rounded-2xl border border-[#2A2A2A] bg-[#0E0E0E] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-[12px] leading-[1.5] text-gray-400 max-w-[640px]">
+                  <span className="text-[#FF6A00] font-semibold tracking-wide text-[10px] uppercase mr-2">Guidance</span>
+                  Rank chapters by capital requirement and cycle time. Operators with constrained liquidity should prioritize $0-start service arbitrage before inventory-backed offers.
+                </p>
+                <button onClick={() => showToast("Selection heuristic", "Begin with Hustle #01 or #02 when available capital is under one hundred dollars. Reserve market and thrift sequences for weeks two through four once proof assets exist.", "info")}
+                  className="text-[11px] font-semibold px-3 h-8 rounded-full border border-[#2A2A2A] bg-[#121212] hover:bg-[#1A1A1A] transition">
+                  Ranking logic
+                </button>
+              </div>
+              <div className="flex items-end justify-between flex-wrap gap-4">
+                <div>
+                  <div className="text-[10px] tracking-[0.18em] font-semibold mb-3 text-[#FF6A00]">ILLUSTRATED HUSTLES • 9 CHAPTERS • 3 AI-POWERED</div>
+                  <h2 className="condensed text-[36px] md:text-[52px] leading-[0.9] uppercase max-w-[680px]">Built From Real Playbooks. Ready To Steal.</h2>
+                </div>
+                <p className="text-[13px] max-w-[360px] leading-[1.5] text-gray-400">Each chapter has offer boxes, DM scripts, and interactive checklists ready to use this weekend.</p>
+              </div>
+
+              <div className="space-y-10">
+                {hustles.map(h => {
+                  const done = hustleSteps[h.id]?.filter(Boolean).length || 0;
+                  return (
+                    <article key={h.id} id={h.id}
+                      className={`rounded-[24px] overflow-hidden border bg-[#121212] ${h.featured ? "border-[#FF6A00] ring-1 ring-[#FF6A00]/30" : "border-[#2A2A2A]"}`}>
+                      <div className="p-6 md:p-8 flex flex-wrap items-center justify-between gap-3 border-b border-[#2A2A2A]">
+                        <div className="flex items-center gap-3">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-widest ${h.featured ? "bg-[#FF6A00] text-black" : "bg-[#1A1A1A]"}`}>{h.num}</span>
+                          <h3 className="condensed text-[20px] md:text-[26px] leading-[0.95] uppercase">{h.title}</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {[h.cost, h.time, h.skill].map((l, i) => (
+                            <span key={i} className="px-2.5 py-1 rounded-full bg-[#080808] border border-[#2A2A2A] text-[11px] font-medium text-gray-400">{l}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid md:grid-cols-[1.2fr_0.8fr]">
+                        <div className="p-6 md:p-8 space-y-6">
+                          <div className={`relative rounded-[16px] overflow-hidden border border-[#2A2A2A] bg-black ${h.featured ? "h-[240px]" : "h-[160px]"}`}>
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] via-[#121212] to-[#0a0a0a] flex items-center justify-center">
+                              {/* skyline watermark on every chapter visual — warm mid-tone for contrast */}
+                              <div className="absolute inset-x-0 bottom-0 pointer-events-none">
+                                <OaklandSkyline className="chapter-skyline" height={h.featured ? 90 : 60} showFill={true} />
+                              </div>
+                              {h.featured ? (
+                                <>
+                                  <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[#FF6A00] text-black text-[11px] font-bold z-10">FEATURED</div>
+                                  <div className="absolute bottom-0 inset-x-0 grid grid-cols-2 text-[11px] z-10">
+                                    <div className="bg-black/80 px-4 py-3 border-r border-white/10"><span className="text-[#FF6A6A] font-semibold">LEFT • Landlord</span><br /><span className="text-gray-400">Dark, cluttered</span></div>
+                                    <div className="bg-black/80 px-4 py-3 text-right"><span className="text-[#7CFF7C] font-semibold">RIGHT • Your $149</span><br /><span className="text-gray-400">Lights on, wide</span></div>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-[13px] text-gray-500 px-4 text-center relative z-10">{h.subtitle}</p>
+                              )}
+                            </div>
+                          </div>
+                          {h.hook.map((p, i) => (
+                            <p key={i} className={`text-[14px] leading-[1.6] ${i === 0 ? "" : "text-gray-400"}`}>{p}</p>
+                          ))}
+                          <div>
+                            <p className="text-[10px] tracking-[0.16em] font-semibold mb-3 text-gray-400">HOW IT WORKS</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {h.howItWorks.map((s, i) => (
+                                <div key={i} className="rounded-xl p-3 border border-[#2A2A2A] bg-[#080808]">
+                                  <div className="text-[10px] font-bold tracking-widest mb-1 text-[#FF6A00]">0{i+1} • {s.label}</div>
+                                  <p className="text-[12px] leading-[1.3]">{s.desc}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808]">
+                            <p className="text-[10px] tracking-[0.16em] font-semibold mb-2 text-gray-400">BAY AREA EDGE</p>
+                            <ul className="space-y-1.5">
+                              {h.bayEdge.map((e, i) => (
+                                <li key={i} className="flex gap-2 text-[12px]"><span className="text-[#FF6A00]">↳</span> {e}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="p-6 md:p-8 border-t md:border-t-0 md:border-l border-[#2A2A2A] space-y-5 bg-[#0F0F0F]">
+                          <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808] space-y-3">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] tracking-[0.16em] font-semibold text-gray-400">OFFER BOX</p>
+                              <CopyBtn text={h.offer} label="Copy" className="h-6 px-2.5 text-[10px] bg-[#1A1A1A] border border-[#2A2A2A] text-gray-400" />
+                            </div>
+                            <p className="mono text-[12px] leading-[1.5] p-3 rounded bg-[#121212] border border-[#222]">{h.offer}</p>
+                          </div>
+                          <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808]">
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-[10px] tracking-[0.16em] font-semibold text-gray-400">ACTION STEPS • 5 TO FIRST $</p>
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#121212] border border-[#222] text-gray-400">{done}/5</span>
+                            </div>
+                            <div className="space-y-2.5">
+                              {h.steps.map((s, i) => (
+                                <Check key={i} checked={!!hustleSteps[h.id]?.[i]} onChange={() => toggleHustle(h.id, i)}>{s}</Check>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808]">
+                            <p className="text-[10px] tracking-[0.16em] font-semibold mb-3 text-gray-400">REAL NUMBERS</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="p-3 rounded-lg bg-[#121212] border border-[#222]"><div className="text-[10px] text-gray-400">COGS</div><div className="text-[16px] font-bold">{h.numbers.cogs}</div></div>
+                              <div className="p-3 rounded-lg bg-[#121212] border border-[#222]"><div className="text-[10px] text-gray-400">SELL PRICE</div><div className="text-[16px] font-bold">{h.numbers.price}</div></div>
+                              <div className="p-3 rounded-lg bg-[#121212] border border-[#222]"><div className="text-[10px] text-gray-400">PROFIT / JOB</div><div className="text-[16px] font-bold text-[#FF6A00]">{h.numbers.profit}</div></div>
+                              <div className="p-3 rounded-lg bg-[#121212] border border-[#222]"><div className="text-[10px] text-gray-400">3 / WEEK</div><div className="text-[14px] font-bold">{h.numbers.monthly}/mo</div></div>
+                            </div>
+                          </div>
+                          <div className="rounded-xl p-4 border border-[#2A2A2A] bg-[#080808] space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] tracking-[0.16em] font-semibold text-gray-400">DM SCRIPT</p>
+                              <CopyBtn text={h.script} label="Copy DM" className="h-6 px-2.5 text-[10px] bg-[#FF6A00] text-black" />
+                            </div>
+                            <p className="text-[12px] leading-[1.5] p-3 rounded bg-[#121212] border border-[#222] italic">"{h.script}"</p>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* CHECKLIST */}
+            <section id="checklist" className="px-5 md:px-10 py-12 md:py-16 space-y-8 border-b border-[#2A2A2A]">
+              <SkylineDivider className="mb-2 -mx-5 md:-mx-10" />
+              <div className="rounded-2xl border border-[#2A2A2A] bg-[#0E0E0E] px-4 py-3">
+                <p className="text-[12px] leading-[1.5] text-gray-400">
+                  <span className="text-[#FF6A00] font-semibold tracking-wide text-[10px] uppercase mr-2">Retention cue</span>
+                  Incomplete sequences decay rapidly. Mark one task before closing the session so the next visit opens against a visible, unfinished obligation rather than a blank field.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <div className="space-y-3">
+                  <div className="text-[10px] tracking-[0.18em] font-semibold text-[#FF6A00]">MASTER CHECKLIST • 30 DAY LAUNCH</div>
+                  <h2 className="condensed text-[36px] md:text-[48px] leading-[0.9] uppercase">Ship In 4 Weeks</h2>
+                  <p className="text-[13px] leading-[1.5] max-w-[520px] text-gray-400">Interactive checklist. Progress bar celebrates at 100%.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-[11px] text-gray-400">PROGRESS</div>
+                    <div className="text-[24px] font-bold condensed">{checkProgress}%</div>
+                  </div>
+                  <div className="w-[120px] h-2 rounded-full bg-[#121212] border border-[#2A2A2A] overflow-hidden">
+                    <div className="h-full bg-[#FF6A00] transition-all duration-500" style={{ width: `${checkProgress}%` }} />
+                  </div>
+                  <button onClick={exportCheck} className="h-9 px-4 rounded-full bg-white text-black text-[12px] font-semibold hover:brightness-110 transition">
+                    Export
+                  </button>
+                </div>
+              </div>
+              {checkProgress === 100 && (
+                <div className="rounded-xl p-4 bg-[#FF6A00] text-black flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-black text-[#FF6A00] flex items-center justify-center font-black">✓</div>
+                  <div>
+                    <p className="font-bold text-[14px]">You did it — 30-day launch complete.</p>
+                    <p className="text-[12px] opacity-80">Now raise prices and duplicate the chapter template.</p>
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(checklistData).map(([week, tasks]) => (
+                  <div key={week} className="rounded-[16px] border border-[#2A2A2A] p-5 space-y-4 bg-[#121212]">
+                    <div className="flex items-center justify-between">
+                      <h4 className="condensed text-[14px] tracking-[0.08em] uppercase">{week.replace("_", " ")}</h4>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#080808] border border-[#222] text-gray-400">
+                        {weekState[week]?.filter(Boolean).length || 0}/{tasks.length}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {tasks.map((item, i) => (
+                        <div key={i} className="space-y-1.5">
+                          <Check checked={!!weekState[week]?.[i]} onChange={() => toggleWeek(week, i)}>{item.task}</Check>
+                          {item.tip && (
+                            <div className="ml-7 rounded-lg p-2.5 border border-[#222] bg-[#080808] text-[11px] text-gray-400">
+                              <span className="font-semibold text-[#F2F0E8]">Tip: </span>{item.tip}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* SELL GUIDE */}
+            <section id="sell" className="px-5 md:px-10 py-12 md:py-16 space-y-10">
+              <SkylineDivider className="mb-2 -mx-5 md:-mx-10" />
+              <div className="grid md:grid-cols-[1.1fr_0.9fr] gap-10">
+                <div className="space-y-6">
+                  <div className="text-[10px] tracking-[0.18em] font-semibold text-[#FF6A00]">HOW TO SELL THIS BOOK • GUMROAD</div>
+                  <h2 className="condensed text-[36px] md:text-[48px] leading-[0.9] uppercase">Turn This Into $27–$47</h2>
+                  <div className="space-y-4">
+                    {[
+                      { step: "01", title: "Upload PDF + Cover", desc: "Gumroad → New Product → File. Upload PDF + cover. Thumbnail 1280×720." },
+                      { step: "02", title: "Price Ladder", desc: "$27 base, $37 premium (templates + checklist), $47 bundle (+ Loom)." },
+                      { step: "03", title: "Description Formula", desc: "Pain → Promise → Proof → What you get → Who it's for." },
+                      { step: "04", title: "Launch in 24h", desc: "1 Reel, 1 Nextdoor post, DM 20 landlords. First 10 get free audit." }
+                    ].map(s => (
+                      <div key={s.step} className="rounded-xl border border-[#2A2A2A] p-4 flex gap-4 bg-[#121212]">
+                        <span className="text-[11px] font-mono font-bold px-2 py-1 rounded bg-[#FF6A00] text-black h-fit">{s.step}</span>
+                        <div>
+                          <p className="font-semibold text-[13px] mb-1">{s.title}</p>
+                          <p className="text-[12px] leading-[1.5] text-gray-400">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-5">
+                  <div className="rounded-[16px] border border-[#2A2A2A] p-5 space-y-4 bg-[#121212]">
+                    <h4 className="condensed text-[16px] uppercase">Upsell Ladder</h4>
+                    {[
+                      { price: "$27", item: "Playbook PDF", includes: "9 illustrated hustles" },
+                      { price: "$37", item: "Premium Pack", includes: "PDF + templates + checklist" },
+                      { price: "$47", item: "Bundle + Audit", includes: "+ 15-min Loom teardown" },
+                      { price: "$19/mo", item: "Retainer", includes: "Monthly scripts + hooks" }
+                    ].map(u => (
+                      <div key={u.price} className="flex items-center justify-between p-3 rounded-xl bg-[#080808] border border-[#1F1F1F]">
+                        <div>
+                          <p className="text-[13px] font-semibold">{u.item}</p>
+                          <p className="text-[11px] text-gray-400">{u.includes}</p>
+                        </div>
+                        <span className="text-[13px] font-bold px-2.5 py-1 rounded-full bg-white text-black">{u.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-[16px] border border-[#2A2A2A] p-5 space-y-4 bg-[#0E0E0E]">
+                    <h4 className="condensed text-[14px] tracking-[0.08em] uppercase">3 Reel Scripts</h4>
+                    {[
+                      { hook: "REEL 1: Airbnb Split", script: "This dark iPhone photo is costing this landlord $150/day. Left is Craigslist, Right is my $149 delivery. Same room, 60 mins, iPhone only. Steal my preset: Exposure +0.5, Shadows +40." },
+                      { hook: "REEL 2: Tech Setup", script: "POV: Your mom calls for the 3rd time about WiFi. I do same-day tech help in Oakland for $49. No Geek Squad wait. Text HELP to book." },
+                      { hook: "REEL 3: Market Table", script: "I turned $100 of wholesale jewelry into $600 at Lake Merritt market. No making, just curation. Want my supplier list? Link in bio — $27 playbook." }
+                    ].map((r, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-[#121212] border border-[#1F1F1F] space-y-1.5">
+                        <p className="text-[11px] font-bold tracking-widest text-[#FF6A00]">{r.hook}</p>
+                        <p className="text-[11px] leading-[1.5] text-gray-400">{r.script}</p>
+                        <CopyBtn text={r.script} label="Copy script" className="mt-1 h-6 px-2.5 text-[10px] bg-[#1A1A1A] border border-[#2A2A2A] text-gray-400" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-[20px] p-[1px] bg-gradient-to-br from-[#FF6A00]/40 via-[#1F1F1F] to-[#1F1F1F]">
+                <div className="rounded-[19px] p-6 md:p-8 flex flex-wrap items-center justify-between gap-6 bg-[#121212]">
+                  <div>
+                    <p className="condensed text-[18px] uppercase">Ready To Sell?</p>
+                    <p className="text-[12px] mt-1 text-gray-400">9 hustles, templates, checklist, DM scripts. Dark luxury design.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => navigate("chapters")} className="h-10 px-5 rounded-full bg-[#FF6A00] text-black text-[13px] font-semibold hover:brightness-110 transition">Browse Hustles</button>
+                    <button onClick={() => navigate("hero")} className="h-10 px-5 rounded-full border border-[#2A2A2A] bg-[#080808] text-[13px] font-medium">Back to Cover</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </main>
+
+          <footer className="relative border-t border-[#2A2A2A] overflow-hidden">
+            <div className="absolute inset-x-0 bottom-0 pointer-events-none">
+              <OaklandSkyline className="footer-skyline" height={72} showFill={true} />
+            </div>
+            <div className="relative z-10 px-5 md:px-10 py-10 text-[11px] flex flex-wrap gap-2 justify-between text-gray-500 max-w-[1440px] mx-auto">
+              <span>© Bay Area Side Hustle Playbook • $47 Gumroad product • Dark luxury</span>
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF6A00]" />
+                Oakland skyline · 9 hustles · templates · scripts
+              </span>
+            </div>
+          </footer>
+
+          {/* Mobile nav */}
+          <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 flex justify-center pointer-events-none">
+            <div className="pointer-events-auto flex items-center gap-1 p-1 rounded-full border border-[#2A2A2A] bg-[#121212]/90 backdrop-blur-xl shadow-2xl">
+              {nav.map(n => (
+                <button key={n.id} onClick={() => navigate(n.id)}
+                  className="px-3 h-9 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-[11px] font-medium hover:bg-[#222] transition">
+                  {n.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
