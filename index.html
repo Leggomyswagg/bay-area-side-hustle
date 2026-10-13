@@ -606,17 +606,36 @@ Core → add-on → retainer`;
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
+    const PROGRESS_KEY = "bash_playbook_progress_v1";
+
+    // Restore only known checkbox positions; outdated or malformed saved data starts unchecked.
+    function restoreProgress(section, entries) {
+      let saved = {};
+      try {
+        const progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+        saved = progress?.[section] || {};
+      } catch (e) {}
+      return Object.fromEntries(entries.map(([id, count]) => [
+        id,
+        Array.from({ length: count }, (_, index) => saved?.[id]?.[index] === true)
+      ]));
+    }
+
     function App() {
-      const [hustleSteps, setHustleSteps] = useState(() => {
-        const init = {};
-        hustles.forEach(h => { init[h.id] = Array(h.steps.length).fill(false); });
-        return init;
-      });
-      const [weekState, setWeekState] = useState(() => {
-        const init = {};
-        Object.entries(checklistData).forEach(([w, t]) => { init[w] = Array(t.length).fill(false); });
-        return init;
-      });
+      const [hustleSteps, setHustleSteps] = useState(() =>
+        restoreProgress("hustles", hustles.map(h => [h.id, h.steps.length]))
+      );
+      const [weekState, setWeekState] = useState(() =>
+        restoreProgress("weeks", Object.entries(checklistData).map(([week, tasks]) => [week, tasks.length]))
+      );
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(PROGRESS_KEY, JSON.stringify({ hustles: hustleSteps, weeks: weekState }));
+        } catch (e) {
+          // Browsers that block storage still support the checklist for this session.
+        }
+      }, [hustleSteps, weekState]);
       const [scrollPct, setScrollPct] = useState(0);
       const [toast, setToast] = useState(null);
       const [showWelcome, setShowWelcome] = useState(false);
