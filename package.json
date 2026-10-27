@@ -1,0 +1,26 @@
+{
+  "name": "bay-area-side-hustle",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && vite preview --host 0.0.0.0",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "postcss": "8.5.32",
+    "tailwindcss": "3.4.17",
+    "vite": "8.3.4"
+  }
+}
