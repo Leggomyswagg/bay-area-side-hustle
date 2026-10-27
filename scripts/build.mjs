@@ -30,6 +30,8 @@ try {
   await writeFile(path.join(temporary, 'index.html'), html);
   await build({ root: temporary, configFile: false, publicDir: false, base: './',
     build: { outDir: path.join(root, 'dist'), emptyOutDir: true }, logLevel: 'warn' });
+  const builtHtml = await readFile(path.join(root, 'dist/index.html'), 'utf8');
+  await writeFile(path.join(root, 'dist/index.html'), builtHtml.replace(/[ \t]+$/gm, ''));
   await cp(path.join(root, 'node_modules/@fontsource-variable/inter/LICENSE'), path.join(root, 'dist/INTER-LICENSE.txt'));
   console.log('Built the playbook with local JavaScript, compiled CSS and bundled fonts.');
 } finally {
